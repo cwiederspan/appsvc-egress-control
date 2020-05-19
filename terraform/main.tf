@@ -59,21 +59,6 @@ resource "azurerm_subnet" "web" {
   }
 }
 
-# resource "azurerm_subnet" "bastion" {
-#   name                 = local.bastion_subnet_name
-#   resource_group_name  = azurerm_resource_group.group.name
-#   virtual_network_name = azurerm_virtual_network.vnet.name
-#   address_prefix       = "10.0.3.0/24"
-
-#   delegation {
-#     name = "aci-subnet-delegation"
-#     service_delegation {
-#       name    = "Microsoft.ContainerInstance/containerGroups"
-#       actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
-#     }
-#   }
-# } 
-
 resource "azurerm_app_service_plan" "plan" {
   name                = "${local.base_name}-plan"
   resource_group_name = azurerm_resource_group.group.name
@@ -88,7 +73,7 @@ resource "azurerm_app_service_plan" "plan" {
 }
 
 resource "azurerm_app_service" "appsvc" {
-  name                = local.base_name
+  name                = "${local.base_name}-app"
   resource_group_name = azurerm_resource_group.group.name
   location            = azurerm_resource_group.group.location
   app_service_plan_id = azurerm_app_service_plan.plan.id
@@ -118,49 +103,7 @@ resource "azurerm_app_service" "appsvc" {
   # }
 }
 
-# resource "azurerm_route_table" "routes" {
-#   name                = "${local.base_name}-routes"
-#   resource_group_name = azurerm_resource_group.group.name
-#   location            = azurerm_resource_group.group.location
-#   disable_bgp_route_propagation = false
-# }
-
-# resource "azurerm_route" "natgw-egress" {
-#   name                   = "natgw-egress-route"
-#   resource_group_name    = azurerm_resource_group.group.name
-#   route_table_name       = azurerm_route_table.routes.name
-#   address_prefix         = "10.0.1.0/24"
-#   next_hop_type          = "VirtualAppliance"
-#   next_hop_in_ip_address = ""
-# }
-
-# resource "azurerm_public_ip" "ipaddr" {
-#   name                = "${local.base_name}-natip"
-#   resource_group_name = azurerm_resource_group.group.name
-#   location            = azurerm_resource_group.group.location
-#   allocation_method   = "Static"
-#   sku                 = "Standard"
-#   # zones               = ["1"]
-# }
-
-resource "azurerm_nat_gateway" "nat" {
-  name                = "${local.base_name}-nat"
-  resource_group_name = azurerm_resource_group.group.name
-  location            = azurerm_resource_group.group.location
-  public_ip_address_ids = [azurerm_public_ip.ipaddr.id]
-}
-
-# resource "azurerm_subnet_route_table_association" "routes" {
-#   subnet_id      = azurerm_subnet.web.id
-#   route_table_id = azurerm_route_table.routes.id
-# }
-
 resource "azurerm_app_service_virtual_network_swift_connection" "web" {
   app_service_id = azurerm_app_service.appsvc.id
   subnet_id      = azurerm_subnet.web.id
-}
-
-resource "azurerm_subnet_nat_gateway_association" "nat" {
-  subnet_id      = azurerm_subnet.web.id
-  nat_gateway_id = azurerm_nat_gateway.nat.id
 }
